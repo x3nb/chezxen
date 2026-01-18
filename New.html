@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Punk Zen Community</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Vast+Shadow&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+  margin:0;
+  background:#000;
+  font-family:'Press Start 2P',cursive;
+  color:white;
+  overflow-y:auto;
+}
+
+.container { text-align:center; padding:20px; }
+
+.paper {
+  background:rgba(0,0,0,0.8);
+  border:2px solid #f0f;
+  padding:20px;
+  margin:20px auto;
+  max-width:420px;
+}
+
+#avatar-img { width:100px; height:100px; border-radius:50%; }
+
+button, select, textarea, input {
+  font-family:'Press Start 2P';
+  padding:8px;
+  margin:5px;
+}
+
+#notes-board {
+  display:flex;
+  flex-wrap:wrap;
+  gap:15px;
+  justify-content:center;
+}
+
+.note {
+  width:140px;
+  min-height:100px;
+  padding:10px;
+  color:#000;
+  font-size:0.6em;
+  box-shadow:4px 4px rgba(0,0,0,0.4);
+  transform:rotate(var(--rot));
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div id="user-avatar">
+  <img id="avatar-img" src="officialsticker.png">
+  <div id="avatar-title" style="font-family:'Vast Shadow';color:#f0f;">Punk Zen</div>
+  <button id="logout-btn" onclick="logout()" style="display:none;">LOG OUT</button>
+</div>
+
+<div id="auth-buttons">
+  <button onclick="showSignUp()">Sign Up</button>
+  <button onclick="showSignIn()">Log In</button>
+</div>
+
+<div class="paper" id="auth-form" style="display:none;">
+  <input id="auth-email" placeholder="Email"><br>
+  <input id="auth-password" type="password" placeholder="Password"><br>
+  <button onclick="submitAuth()">Submit</button>
+  <button onclick="cancelAuth()">Cancel</button>
+</div>
+
+<div id="main-content" style="display:none;">
+
+<div class="paper">
+  <h3>Profile</h3>
+  <input id="profile-username" placeholder="Username"><br>
+  <input id="avatar-url" placeholder="Avatar URL"><br>
+  <input id="social-link" placeholder="Social link"><br>
+  <button onclick="saveProfile()">Save</button>
+</div>
+
+<div class="paper">
+  <h3>Chalkboard</h3>
+
+  <div id="notes-board"></div>
+
+  <select id="note-color">
+    <option value="#ffeb3b">Yellow</option>
+    <option value="#ff6961">Red</option>
+    <option value="#77dd77">Green</option>
+    <option value="#aec6cf">Blue</option>
+  </select><br>
+
+  <textarea id="note-input" placeholder="I was here..."></textarea><br>
+  <button onclick="postNote()">Post</button>
+</div>
+
+</div>
+</div>
+
+<script>
+const supabase = supabase.createClient(
+  'SUPABASE_URL',
+  'SUPABASE_ANON_KEY'
+);
+
+let currentUser = null;
+let authMode = null;
+
+function showSignUp(){ authMode='signup'; showForm(); }
+function showSignIn(){ authMode='signin'; showForm(); }
+function showForm(){
+  auth-form.style.display='block';
+  auth-buttons.style.display='none';
+}
+function cancelAuth(){
+  auth-form.style.display='none';
+  auth-buttons.style.display='flex';
+}
+
+async function submitAuth(){
+  const email = auth-email.value;
+  const password = auth-password.value;
+
+  if(authMode==='signup'){
+    await supabase.auth.signUp({ email, password });
+    alert('Check your email!');
+    cancelAuth();
+  } else {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if(error) return alert(error.message);
+    currentUser = data.user;
+    afterLogin();
+  }
+}
+
+async function afterLogin(){
+  auth-form.style.display='none';
+  auth-buttons.style.display='none';
+  main-content.style.display='block';
+  logout-btn.style.display='block';
+  await loadProfile();
+  loadNotes();
+}
+
+async function loadProfile(){
+  const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+  if(data){
+    profile-username.value = data.username ?? '';
+    avatar-url.value = data.avatar_url ?? '';
+    social-link.value = data.social_link ?? '';
+    if(data.avatar_url) avatar-img.src = data.avatar_url;
+    currentUser.username = data.username;
+  }
+}
+
+async function saveProfile(){
+  await supabase.from('profiles').upsert({
+    id: currentUser.id,
+    username: profile-username.value,
+    avatar_url: avatar-url.value,
+    social_link: social-link.value
+  });
+  alert('Saved!');
+}
+
+async function loadNotes(){
+  const { data } = await supabase.from('chalkboard_notes').select('*').order('created_at',{ascending:false});
+  notes-board.innerHTML='';
+  data.forEach(note=>{
+    const d=document.createElement('div');
+    d.className='note';
+    d.style.background=note.color;
+    d.style.setProperty('--rot',note.rotation+'deg');
+    d.innerHTML=`<b>${note.username}</b><br>${note.message}`;
+    if(note.user_id===currentUser.id){
+      d.innerHTML+=`<br><button onclick="editNote('${note.id}','${note.message}')">Edit</button>
+      <button onclick="deleteNote('${note.id}')">X</button>`;
+    }
+    notes-board.appendChild(d);
+  });
+}
+
+async function postNote(){
+  await supabase.from('chalkboard_notes').insert({
+    user_id: currentUser.id,
+    username: currentUser.username,
+    message: note-input.value,
+    color: note-color.value,
+    rotation: Math.floor(Math.random()*10)-5
+  });
+  note-input.value='';
+  loadNotes();
+}
+
+async function editNote(id,msg){
+  const m=prompt('Edit note',msg);
+  if(m) await supabase.from('chalkboard_notes').update({message:m}).eq('id',id);
+  loadNotes();
+}
+
+async function deleteNote(id){
+  await supabase.from('chalkboard_notes').delete().eq('id',id);
+  loadNotes();
+}
+
+async function logout(){
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+supabase.auth.getSession().then(({data})=>{
+  if(data.session){
+    currentUser=data.session.user;
+    afterLogin();
+  }
+});
+</script>
+</body>
+</html>
