@@ -320,6 +320,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
 });
+  window.logout = async () => {
+  await supabase.auth.signOut();
+  window.currentUser = null;
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('auth-buttons').style.display = 'flex';
+  document.getElementById('logout-btn').style.display = 'none';
+};
+
 </script>
 </body>
 </html>
