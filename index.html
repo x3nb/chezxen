@@ -45,26 +45,37 @@
     text-align: center;
     padding: 20px;
   }
-
-  #user-avatar {
-    width: 100px;
-    height: 100px;
-    margin: 20px auto;
-  }
-#avatar-title {
-  color: #f0f;          /* Pink color */
-  font-size: 1.2em;     /* Slightly bigger */
-  margin-top: 10px;     /* Space below avatar */
-  text-shadow: 2px 2px #000;  /* Subtle shadow for depth */
+#user-avatar {
+  display: flex;
+  flex-direction: column; /* Avatar on top, title below */
+  align-items: center;
+  margin: 20px auto;
+  z-index: 1;
 }
-  #auth-buttons button {
-    margin: 10px;
-    padding: 10px 20px;
-    background: #f0f;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-family: 'Press Start 2P', cursive;
+
+#avatar-title {
+  font-family: 'Vast Shadow', cursive;
+  color: #f0f;
+  margin-top: 10px;
+  font-size: 1.2em;
+  text-shadow: 2px 2px #000;
+}
+
+#auth-buttons {
+  margin-top: 20px;  /* Space below avatar/title */
+  z-index: 1;
+  position: relative;
+}
+
+#auth-buttons button {
+  margin: 10px;
+  padding: 10px 20px;
+  background: #f0f;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-family: 'Press Start 2P', cursive;
+
   }
 
   .paper {
