@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Punk Zen Community</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Vast+Shadow&display=swap" rel="stylesheet" />
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  body { margin:0; padding:0; background:#000; font-family:'Press Start 2P',cursive; color:white; overflow:hidden; }
+
+  /* Floating shapes */
+  .background-shapes { position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; z-index:0; }
+  .shape { position:absolute; border-radius:50%; animation:float 10s infinite linear; }
+  @keyframes float { 0% { transform:translateY(0) rotate(0deg);} 100% { transform:translateY(-100vh) rotate(360deg);} }
+
+  .container { position:relative; z-index:1; text-align:center; padding:20px; }
+
+  /* Avatar */
+  #user-avatar { display:flex; flex-direction:column; align-items:center; margin:20px auto; }
+  #avatar-img { width:100px; height:100px; border-radius:50%; }
+  #avatar-title { font-family:'Vast Shadow',cursive; color:#f0f; margin-top:10px; font-size:1.2em; text-shadow:2px 2px #000; }
+
+  /* Auth buttons */
+  #auth-buttons { margin-top:20px; display:flex; justify-content:center; gap:15px; }
+  #auth-buttons button { margin:0; padding:10px 20px; background:#f0f; color:white; border:none; cursor:pointer; font-family:'Press Start 2P',cursive; }
+
+  .paper { background: rgba(0,0,0,0.8); border:2px solid #f0f; padding:20px; margin:20px auto; max-width:500px; }
+
+  #signup-message { color:lime; font-weight:bold; margin-top:10px; }
+
+  /* Chalkboard / notes */
+  #chalkboard { background: #1e2f1e; border:3px dashed #ccc; padding:20px; margin-top:20px; }
+  #notes-board { display:flex; flex-wrap:wrap; gap:15px; margin-bottom:15px; }
+  .note { width:120px; min-height:100px; padding:10px; background:#ffeb3b; color:#000; font-size:0.6em; box-shadow:4px 4px 0 rgba(0,0,0,0.4); transform: rotate(var(--rot)); }
+
+  /* Profile edit */
+  #profile-edit { margin-top:20px; }
+  #profile-edit input { margin-bottom:10px; width:100%; padding:10px; font-family:'Press Start 2P'; }
+  #profile-edit button { padding:10px; font-family:'Press Start 2P'; background:#f0f; color:white; border:none; cursor:pointer; }
+
+</style>
+</head>
+<body>
+
+<div class="background-shapes" id="shapes"></div>
+
+<div class="container">
+  <!-- Avatar -->
+  <div id="user-avatar">
+    <img id="avatar-img" src="officialsticker.png" alt="Avatar">
+    <div id="avatar-title">Punk Zen</div>
+  </div>
+
+  <!-- Auth buttons -->
+  <div id="auth-buttons">
+    <button onclick="showSignUp()">Sign Up</button>
+    <button onclick="showSignIn()">Log In</button>
+  </div>
+
+  <!-- Auth Form -->
+  <div class="paper" id="auth-form" style="display:none;">
+    <h2 style="font-family:'Vast Shadow',cursive;">Welcome</h2>
+    <input type="email" id="auth-email" placeholder="Email" /><br>
+    <input type="password" id="auth-password" placeholder="Password" /><br>
+    <button onclick="submitAuth()">Submit</button>
+    <button onclick="cancelAuth()">Cancel</button>
+    <div id="signup-message"></div>
+  </div>
+
+  <!-- Main content -->
+  <div class="paper" id="main-content" style="display:none;">
+    <h2 id="chat-header"></h2>
+    <p id="chat"></p>
+
+    <!-- Chalkboard -->
+    <div id="chalkboard">
+      <h3 style="font-family:'Vast Shadow',cursive;">Chalkboard</h3>
+      <div id="notes-board"></div>
+      <textarea id="note-input" placeholder="I was here..."></textarea>
+      <button onclick="postNote()">Post It</button>
+    </div>
+
+    <!-- Profile edit -->
+    <div id="profile-edit" class="paper">
+      <h3>Edit Profile</h3>
+      <input id="profile-username" placeholder="Username" />
+      <input id="social-link" placeholder="Social Link" />
+      <input id="avatar-url" placeholder="Avatar URL" />
+      <button onclick="saveProfile()">Save Profile</button>
+    </div>
+
+    <!-- Logout -->
+    <button onclick="logout()" style="margin-top:10px; background:#ff00ff; color:white; border:none; padding:8px; font-family:'Press Start 2P'; cursor:pointer;">LOG OUT</button>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Floating shapes
+  const shapesContainer = document.getElementById('shapes');
+  for(let i=0;i<20;i++){
+    const s=document.createElement('div');
+    s.className='shape';
+    s.style.width=s.style.height=(10+Math.random()*30)+'px';
+    s.style.top=Math.random()*100+'%';
+    s.style.left=Math.random()*100+'%';
+    s.style.background='linear-gradient(45deg,#f0f,#0ff,#ff0)';
+    s.style.transform=`rotate(${Math.random()*360}deg)`;
+    s.style.animationDuration=(10+Math.random()*20)+'s';
+    shapesContainer.appendChild(s);
+  }
+
+  // Supabase init
+  const supabaseUrl = 'https://hwymepujsvfqjkbullaf.supabase.co';
+  const supabaseKey = ''; // <-- Your anon key here
+  window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  window.authMode = null;
+  window.currentUser = null;
+
+  // Show auth forms
+  window.showSignUp = () => { authMode='signup'; showForm(); };
+  window.showSignIn = () => { authMode='signin'; showForm(); };
+  window.cancelAuth = () => { document.getElementById('auth-form').style.display='none'; document.getElementById('auth-buttons').style.display='flex'; document.getElementById('signup-message').innerText=''; authMode=null; };
+
+  function showForm(){
+    document.getElementById('auth-form').style.display='block';
+    document.getElementById('auth-buttons').style.display='none';
+    document.getElementById('signup-message').innerText='';
+  }
+
+  // Submit auth
+  window.submitAuth = async () => {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    if(!email||!password){ alert('Enter email and password'); return; }
+
+    if(authMode==='signup'){
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if(error){ alert('Sign-up error: '+error.message); return; }
+      document.getElementById('signup-message').innerText='Signup successful! Check your email for confirmation.';
+      document.getElementById('auth-buttons').innerHTML='<button onclick="showSignIn()">Log In</button>';
+      document.getElementById('auth-buttons').style.display='flex';
+      document.getElementById('auth-form').style.display='none';
+    } else if(authMode==='signin'){
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if(error){ alert('Sign-in error: '+error.message); return; }
+      currentUser = data.user;
+      document.getElementById('auth-form').style.display='none';
+      document.getElementById('auth-buttons').style.display='none';
+      document.getElementById('main-content').style.display='block';
+      loadProfile();
+      loadNotes();
+      showGreeting();
+    }
+  };
+
+  function showGreeting(){
+    document.getElementById('chat-header').innerText=`Welcome, ${currentUser.email}`;
+    document.getElementById('chat').innerHTML=`Hello ${currentUser.email}, welcome to Punk Zen!`;
+  }
+
+  // LOGOUT
+  window.logout = async () => {
+    await supabase.auth.signOut();
+    currentUser=null;
+    document.getElementById('main-content').style.display='none';
+    document.getElementById('auth-buttons').style.display='flex';
+  };
+
+  // Profile functions
+  async function loadProfile(){
+    const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+    if(data){
+      document.getElementById('profile-username').value = data.username ?? '';
+      document.getElementById('social-link').value = data.social_link ?? '';
+      document.getElementById('avatar-url').value = data.avatar_url ?? '';
+      if(data.avatar_url) document.getElementById('avatar-img').src = data.avatar_url;
+    }
+  }
+
+  async function saveProfile(){
+    const username=document.getElementById('profile-username').value;
+    const social=document.getElementById('social-link').value;
+    const avatar=document.getElementById('avatar-url').value;
+    await supabase.from('profiles').upsert({
+      id: currentUser.id,
+      username,
+      social_link: social,
+      avatar_url: avatar,
+      updated_at: new Date()
+    });
+    if(avatar) document.getElementById('avatar-img').src=avatar;
+    alert('Profile saved!');
+  }
+
+  // Chalkboard / notes functions
+  async function loadNotes(){
+    const { data } = await supabase.from('chalkboard_notes').select('*').order('created_at',{ascending:false});
+    const board=document.getElementById('notes-board');
+    board.innerHTML='';
+    data.forEach(note=>{
+      const div=document.createElement('div');
+      div.className='note';
+      div.style.setProperty('--rot', note.rotation+'deg');
+      div.innerHTML=`<strong>${note.username}</strong><br>${note.message}`;
+      board.appendChild(div);
+    });
+  }
+
+  async function postNote(){
+    const message = document.getElementById('note-input').value;
+    if(!message) return;
+    const rotation = Math.floor(Math.random()*10)-5;
+    await supabase.from('chalkboard_notes').insert({
+      user_id: currentUser.id,
+      username: document.getElementById('profile-username').value || currentUser.email.split('@')[0],
+      message,
+      rotation
+    });
+    document.getElementById('note-input').value='';
+    loadNotes();
+  }
+
+  // Restore session if exists
+  const { data: { session } } = await supabase.auth.getSession();
+  if(session?.user){
+    currentUser=session.user;
+    document.getElementById('auth-buttons').style.display='none';
+    document.getElementById('main-content').style.display='block';
+    loadProfile();
+    loadNotes();
+    showGreeting();
+  }
+
+});
+</script>
+</body>
+</html>
