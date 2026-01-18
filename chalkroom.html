@@ -319,8 +319,16 @@ async function postNote() {
     loadNotes();
   }
 }
+async function saveProfile() {
+  const link = document.getElementById('social-link').value;
 
+  await supabase.from('profiles').upsert({
+    id: currentUser.id,
+    social_link: link
+  });
+
+  alert('Profile updated!');
+}
 </script>
-
 </body>
 </html>
