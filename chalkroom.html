@@ -131,56 +131,97 @@ textarea {
 </div>
 
 <script>
-const supabase = supabasejs.createClient(
+/* ==========================
+   SUPABASE INIT (FIXED)
+========================== */
+const supabase = window.supabase.createClient(
   'https://hwymepujsvfqjkbullaf.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3eW1lcHVqc3ZmcWprYnVsbGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3MDczOTQsImV4cCI6MjA4NDI4MzM5NH0.V6-Cm331IocSXDqe-v6iAZA3TV1STyEHyQI43lcXU_4'
+  'YOUR_PUBLIC_ANON_KEY'
 );
 
 let user = null;
 
-/* AUTH */
+/* ==========================
+   AUTH FUNCTIONS
+========================== */
 async function signup() {
-  const email = emailInput().value;
-  const password = passwordInput().value;
-  const username = usernameInput().value;
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const username = document.getElementById('username').value.trim();
+
+  if (!email || !password || !username) {
+    alert('All fields required for signup');
+    return;
+  }
 
   const { error } = await supabase.auth.signUp({
-    email, password,
-    options: { data: { username } }
+    email,
+    password,
+    options: {
+      data: { username }
+    }
   });
 
-  if (error) alert(error.message);
-  else alert('Check your email.');
+  if (error) {
+    alert(error.message);
+  } else {
+    alert('Signup successful — check your email!');
+  }
 }
 
 async function login() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  if (!email || !password) {
+    alert('Missing email or password');
+    return;
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: emailInput().value,
-    password: passwordInput().value
+    email,
+    password
   });
 
-  if (error) alert(error.message);
-  else init(data.user);
+  if (error) {
+    alert(error.message);
+  } else {
+    initUser(data.user);
+  }
 }
 
-/* SESSION */
-supabase.auth.onAuthStateChange((_, session) => {
-  if (session?.user) init(session.user);
+/* ==========================
+   SESSION PERSISTENCE
+========================== */
+supabase.auth.onAuthStateChange((event, session) => {
+  if (session?.user) {
+    initUser(session.user);
+  }
 });
 
-async function init(u) {
+/* ==========================
+   POST-LOGIN INIT
+========================== */
+function initUser(u) {
   user = u;
+
   document.getElementById('auth').classList.add('hidden');
   document.getElementById('board').classList.remove('hidden');
 
+  const username =
+    user.user_metadata.username ||
+    user.email.split('@')[0];
+
   document.getElementById('welcome').innerText =
-    `welcome ${user.user_metadata.username}`;
+    `welcome ${username}`;
 
   loadProfile();
   loadNotes();
 }
 
-/* PROFILE */
+/* ==========================
+   PROFILE
+========================== */
 async function loadProfile() {
   const { data } = await supabase
     .from('profiles')
@@ -194,63 +235,64 @@ async function loadProfile() {
 
 async function uploadAvatar(e) {
   const file = e.target.files[0];
+  if (!file) return;
+
   const path = `${user.id}.png`;
 
-  await supabase.storage.from('avatars').upload(path, file, {
-    upsert:true
-  });
+  await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true });
 
-  const url = supabase.storage.from('avatars')
+  const url = supabase.storage
+    .from('avatars')
     .getPublicUrl(path).data.publicUrl;
 
   await supabase.from('profiles').upsert({
-    id:user.id,
-    avatar_url:url
+    id: user.id,
+    avatar_url: url
   });
 
   loadProfile();
 }
 
-/* NOTES */
+/* ==========================
+   NOTES
+========================== */
 async function loadNotes() {
   const { data } = await supabase
     .from('chalkboard_notes')
     .select('*')
-    .order('created_at', { ascending:false });
+    .order('created_at', { ascending: false });
 
   const board = document.getElementById('notes');
   board.innerHTML = '';
 
   data.forEach(n => {
-    const d = document.createElement('div');
-    d.className = 'note';
-    d.style.setProperty('--r', `${n.rotation}deg`);
-    d.innerHTML = `<strong>${n.username}</strong><br>${n.message}`;
-    board.appendChild(d);
+    const note = document.createElement('div');
+    note.className = 'note';
+    note.style.setProperty('--r', `${n.rotation}deg`);
+    note.innerHTML =
+      `<strong>${n.username}</strong><br>${n.message}`;
+    board.appendChild(note);
   });
 }
 
 async function postNote() {
-  const msg = noteInput().value.trim();
+  const msg = document.getElementById('noteInput').value.trim();
   if (!msg) return;
 
   await supabase.from('chalkboard_notes').insert({
-    user_id:user.id,
-    username:user.user_metadata.username,
-    message:msg,
-    rotation:Math.random()*10-5
+    user_id: user.id,
+    username: user.user_metadata.username,
+    message: msg,
+    rotation: Math.random() * 10 - 5
   });
 
-  noteInput().value='';
+  document.getElementById('noteInput').value = '';
   loadNotes();
 }
-
-/* HELPERS */
-const emailInput = () => document.getElementById('email');
-const passwordInput = () => document.getElementById('password');
-const usernameInput = () => document.getElementById('username');
-const noteInput = () => document.getElementById('noteInput');
 </script>
+
 
 </body>
 </html>
