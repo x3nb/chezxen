@@ -12,53 +12,133 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-  body { margin:0; padding:0; background:#000; font-family:'Press Start 2P',cursive; color:white; overflow:hidden; }
+  body {
+    margin:0;
+    padding:0;
+    background:#000;
+    font-family:'Press Start 2P', cursive;
+    color:white;
+    overflow-y:auto;
+    height:100vh;
+  }
 
-  /* Floating shapes */
-  .background-shapes { position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; z-index:0; }
-  .shape { position:absolute; border-radius:50%; animation:float 10s infinite linear; }
-  @keyframes float { 0% { transform:translateY(0) rotate(0deg);} 100% { transform:translateY(-100vh) rotate(360deg);} }
+  .background-shapes {
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    z-index:0;
+  }
 
-  .container { position:relative; z-index:1; text-align:center; padding:20px; }
+  .shape {
+    position:absolute;
+    border-radius:50%;
+    animation:float 10s infinite linear;
+  }
 
-  /* Avatar */
-  #user-avatar { display:flex; flex-direction:column; align-items:center; margin:20px auto; }
-  #avatar-img { width:100px; height:100px; border-radius:50%; }
-  #avatar-title { font-family:'Vast Shadow',cursive; color:#f0f; margin-top:10px; font-size:1.2em; text-shadow:2px 2px #000; }
+  @keyframes float {
+    0% { transform:translateY(0) rotate(0deg);}
+    100% { transform:translateY(-100vh) rotate(360deg);}
+  }
+
+  .container {
+    position:relative;
+    z-index:1;
+    text-align:center;
+    padding:20px;
+    max-width:900px;
+    margin:auto;
+  }
+
+  /* Avatar & headline */
+  #user-avatar {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin:20px auto;
+  }
+  #avatar-img {
+    width:100px;
+    height:100px;
+    border-radius:50%;
+  }
+  #avatar-title {
+    font-family:'Vast Shadow', cursive;
+    color:#f0f;
+    margin-top:10px;
+    font-size:1.2em;
+    text-shadow:2px 2px #000;
+  }
 
   /* Auth buttons */
-  #auth-buttons { margin-top:20px; display:flex; justify-content:center; gap:15px; }
-  #auth-buttons button { margin:0; padding:10px 20px; background:#f0f; color:white; border:none; cursor:pointer; font-family:'Press Start 2P',cursive; }
+  #auth-buttons {
+    margin-top:20px;
+    display:flex;
+    justify-content:center;
+    gap:15px;
+  }
+  #auth-buttons button {
+    margin:0;
+    padding:10px 20px;
+    background:#f0f;
+    color:white;
+    border:none;
+    cursor:pointer;
+    font-family:'Press Start 2P', cursive;
+  }
 
-  .paper { background: rgba(0,0,0,0.8); border:2px solid #f0f; padding:20px; margin:20px auto; max-width:500px; }
+  /* Panels */
+  .paper {
+    background: rgba(0,0,0,0.8);
+    border:2px solid #f0f;
+    padding:20px;
+    margin:20px auto;
+    max-width:500px;
+  }
+
   #signup-message { color:lime; font-weight:bold; margin-top:10px; }
 
-  /* Chalkboard / notes */
-  #chalkboard { background: #1e2f1e; border:3px dashed #ccc; padding:20px; margin-top:20px; }
-  #notes-board { display:flex; flex-wrap:wrap; gap:15px; margin-bottom:15px; }
-  .note { width:120px; min-height:100px; padding:10px; background:#ffeb3b; color:#000; font-size:0.6em; box-shadow:4px 4px 0 rgba(0,0,0,0.4); transform: rotate(var(--rot)); }
+  /* Chalkboard notes */
+  #chalkboard {
+    background:#1e2f1e;
+    border:3px dashed #ccc;
+    padding:15px;
+  }
+  #notes-board {
+    display:flex;
+    flex-wrap:wrap;
+    gap:15px;
+    margin-bottom:15px;
+  }
+  .note {
+    width:120px;
+    min-height:100px;
+    padding:10px;
+    background:#ffeb3b;
+    color:#000;
+    font-size:0.6em;
+    box-shadow:4px 4px 0 rgba(0,0,0,0.4);
+    transform: rotate(var(--rot));
+  }
 
-  /* Profile edit */
-  #profile-edit { margin-top:20px; }
-  #profile-edit input { margin-bottom:10px; width:100%; padding:10px; font-family:'Press Start 2P'; }
-  #profile-edit button { padding:10px; font-family:'Press Start 2P'; background:#f0f; color:white; border:none; cursor:pointer; }
+  textarea { width:100%; padding:10px; font-family:'Press Start 2P'; }
 
-  /* Logout */
-  #logout-btn { margin-top:10px; background:#ff00ff; color:white; border:none; padding:8px; font-family:'Press Start 2P'; cursor:pointer; }
-
-  /* Notes textarea */
-  #note-input { width:100%; padding:10px; font-family:'Press Start 2P'; margin-bottom:10px; }
+  input { padding:10px; font-family:'Press Start 2P'; width:90%; margin:5px 0; }
+  button { padding:10px 15px; cursor:pointer; }
 </style>
 </head>
+
 <body>
 
 <div class="background-shapes" id="shapes"></div>
 
 <div class="container">
 
-  <!-- Avatar -->
+  <!-- Avatar + headline -->
   <div id="user-avatar">
-    <img id="avatar-img" src="officialsticker.png" alt="Avatar">
+    <img id="avatar-img" src="officialsticker.png" alt="User Avatar">
     <div id="avatar-title">Punk Zen</div>
   </div>
 
@@ -70,7 +150,7 @@
 
   <!-- Auth form -->
   <div class="paper" id="auth-form" style="display:none;">
-    <h2 style="font-family:'Vast Shadow',cursive;">Welcome</h2>
+    <h2 style="font-family:'Vast Shadow',cursive;">Welcome to the Punk Tribe</h2>
     <input type="email" id="auth-email" placeholder="Email" /><br>
     <input type="password" id="auth-password" placeholder="Password" /><br>
     <button onclick="submitAuth()">Submit</button>
@@ -79,29 +159,21 @@
   </div>
 
   <!-- Main content -->
-  <div class="paper" id="main-content" style="display:none;">
-    <h2 id="chat-header"></h2>
-    <p id="chat"></p>
-
-    <!-- Chalkboard -->
-    <div id="chalkboard">
-      <h3 style="font-family:'Vast Shadow',cursive;">Chalkboard</h3>
+  <div id="main-content" style="display:none;">
+    <div class="paper" id="chalkboard">
+      <h2 style="font-family:'Vast Shadow',cursive;">Chalkboard</h2>
       <div id="notes-board"></div>
       <textarea id="note-input" placeholder="I was here..."></textarea>
       <button onclick="postNote()">Post It</button>
     </div>
 
-    <!-- Profile edit -->
-    <div id="profile-edit" class="paper">
+    <div class="paper">
       <h3>Edit Profile</h3>
       <input id="profile-username" placeholder="Username" />
-      <input id="social-link" placeholder="Social Link" />
+      <input id="social-link" placeholder="Your social link" />
       <input id="avatar-url" placeholder="Avatar URL" />
       <button onclick="saveProfile()">Save Profile</button>
     </div>
-
-    <!-- Logout -->
-    <button id="logout-btn" onclick="logout()">LOG OUT</button>
   </div>
 
 </div>
@@ -109,103 +181,98 @@
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
 
-  // Floating shapes (will display only after login)
-  function createShapes() {
-    const shapesContainer = document.getElementById('shapes');
-    for(let i=0;i<20;i++){
-      const s=document.createElement('div');
-      s.className='shape';
-      s.style.width=s.style.height=(10+Math.random()*30)+'px';
-      s.style.top=Math.random()*100+'%';
-      s.style.left=Math.random()*100+'%';
-      s.style.background='linear-gradient(45deg,#f0f,#0ff,#ff0)';
-      s.style.transform=`rotate(${Math.random()*360}deg)`;
-      s.style.animationDuration=(10+Math.random()*20)+'s';
-      shapesContainer.appendChild(s);
-    }
+  // Floating shapes
+  const shapesContainer = document.getElementById('shapes');
+  for(let i=0;i<20;i++){
+    const shape=document.createElement('div');
+    shape.className='shape';
+    const size = 10 + Math.random()*30;
+    shape.style.width = shape.style.height = size+'px';
+    shape.style.top = Math.random()*100+'%';
+    shape.style.left = Math.random()*100+'%';
+    shape.style.background='linear-gradient(45deg,#f0f,#0ff,#ff0)';
+    shape.style.transform=`rotate(${Math.random()*360}deg)`;
+    shape.style.animationDuration=(10+Math.random()*20)+'s';
+    shapesContainer.appendChild(shape);
   }
 
-  // Supabase init
+  // Supabase
   const supabaseUrl = 'https://hwymepujsvfqjkbullaf.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3eW1lcHVqc3ZmcWprYnVsbGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3MDczOTQsImV4cCI6MjA4NDI4MzM5NH0.V6-Cm331IocSXDqe-v6iAZA3TV1STyEHyQI43lcXU_4'; // <-- ADD YOUR ANON KEY
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3eW1lcHVqc3ZmcWprYnVsbGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3MDczOTQsImV4cCI6MjA4NDI4MzM5NH0.V6-Cm331IocSXDqe-v6iAZA3TV1STyEHyQI43lcXU_4';
   window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
   window.authMode = null;
   window.currentUser = null;
 
-  // Auth form functions
-  window.showSignUp = () => { authMode='signup'; showForm(); };
-  window.showSignIn = () => { authMode='signin'; showForm(); };
-  window.cancelAuth = () => { document.getElementById('auth-form').style.display='none'; document.getElementById('auth-buttons').style.display='flex'; document.getElementById('signup-message').innerText=''; authMode=null; };
+  // Show forms
+  window.showSignUp = () => { window.authMode='signup'; showForm(); }
+  window.showSignIn = () => { window.authMode='signin'; showForm(); }
+  window.cancelAuth = () => {
+    document.getElementById('auth-form').style.display='none';
+    document.getElementById('auth-buttons').style.display='flex';
+    document.getElementById('signup-message').innerText='';
+    window.authMode=null;
+  }
 
-  function showForm(){
+  function showForm() {
     document.getElementById('auth-form').style.display='block';
     document.getElementById('auth-buttons').style.display='none';
     document.getElementById('signup-message').innerText='';
   }
 
-  // LOGIN / SIGNUP
+  // Submit auth
   window.submitAuth = async () => {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
-    if(!email||!password){ alert('Enter email and password'); return; }
+    if(!email || !password){ alert('Enter email and password'); return; }
 
     if(authMode==='signup'){
       const { data, error } = await supabase.auth.signUp({ email, password });
-      if(error){ alert('Sign-up error: '+error.message); return; }
-      document.getElementById('signup-message').innerText='Signup successful! Check your email for confirmation.';
+      if(error){ alert(error.message); return; }
+      document.getElementById('signup-message').innerText='Sign-up successful! Check your email.';
       document.getElementById('auth-buttons').innerHTML='<button onclick="showSignIn()">Log In</button>';
       document.getElementById('auth-buttons').style.display='flex';
       document.getElementById('auth-form').style.display='none';
     } else if(authMode==='signin'){
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if(error){ alert('Sign-in error: '+error.message); return; }
+      if(error){ alert(error.message); return; }
+      window.currentUser = data.user;
 
-      // LOGIN SUCCESS
-      currentUser = data.user;
+      // Hide auth, show main
       document.getElementById('auth-form').style.display='none';
       document.getElementById('auth-buttons').style.display='none';
       document.getElementById('main-content').style.display='block';
 
-      // Layer the features AFTER login
-      createShapes();
-      loadProfile();
-      loadNotes();
-      showGreeting();
+      // Load profile & notes
+      await loadProfile();
+      await loadNotes();
     }
   };
 
-  function showGreeting(){
-    document.getElementById('chat-header').innerText=`Welcome, ${currentUser.email}`;
-    document.getElementById('chat').innerHTML=`Hello ${currentUser.email}, welcome to Punk Zen!`;
-  }
-
-  // LOGOUT
-  window.logout = async () => {
-    await supabase.auth.signOut();
-    currentUser=null;
-    document.getElementById('main-content').style.display='none';
-    document.getElementById('auth-buttons').style.display='flex';
-  };
-
-  // PROFILE
-  async function loadProfile(){
-    try{
+  // Load profile
+  async function loadProfile() {
+    try {
       const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
       if(data){
+        currentUser.username = data.username || currentUser.email.split('@')[0];
         document.getElementById('profile-username').value = data.username ?? '';
         document.getElementById('social-link').value = data.social_link ?? '';
         document.getElementById('avatar-url').value = data.avatar_url ?? '';
         if(data.avatar_url) document.getElementById('avatar-img').src = data.avatar_url;
+      } else {
+        currentUser.username = currentUser.email.split('@')[0];
       }
-    } catch(e){ console.error('Profile load error', e); }
+    } catch(e){ console.error('Profile load error', e); currentUser.username = currentUser.email.split('@')[0]; }
   }
 
-  async function saveProfile(){
-    const username=document.getElementById('profile-username').value;
-    const social=document.getElementById('social-link').value;
-    const avatar=document.getElementById('avatar-url').value;
-    try{
+  // Save profile
+  async function saveProfile() {
+    const username = document.getElementById('profile-username').value.trim();
+    const social = document.getElementById('social-link').value.trim();
+    const avatar = document.getElementById('avatar-url').value.trim();
+    if(!username){ alert('Username required'); return; }
+
+    try {
       await supabase.from('profiles').upsert({
         id: currentUser.id,
         username,
@@ -213,57 +280,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         avatar_url: avatar,
         updated_at: new Date()
       });
-      if(avatar) document.getElementById('avatar-img').src=avatar;
+      currentUser.username = username;
+      if(avatar) document.getElementById('avatar-img').src = avatar;
       alert('Profile saved!');
     } catch(e){ console.error('Profile save error', e); }
   }
 
-  // CHALKBOARD NOTES
-  async function loadNotes(){
-    try{
-      const { data } = await supabase.from('chalkboard_notes').select('*').order('created_at',{ascending:false});
-      const board=document.getElementById('notes-board');
+  // Load notes
+  async function loadNotes() {
+    try {
+      const { data } = await supabase.from('chalkboard_notes').select('*').order('created_at', { ascending:false }).limit(20);
+      const board = document.getElementById('notes-board');
       board.innerHTML='';
       data.forEach(note=>{
-        const div=document.createElement('div');
+        const div = document.createElement('div');
         div.className='note';
         div.style.setProperty('--rot', note.rotation+'deg');
-        div.innerHTML=`<strong>${note.username}</strong><br>${note.message}`;
+        div.innerHTML = `<strong>${note.username}</strong><br>${note.message}`;
         board.appendChild(div);
       });
-    } catch(e){ console.error('Notes load error', e); }
+    } catch(e){ console.error('Load notes error', e); }
   }
 
-  async function postNote(){
-    const message = document.getElementById('note-input').value;
+  // Post note
+  window.postNote = async () => {
+    const message = document.getElementById('note-input').value.trim();
     if(!message) return;
     const rotation = Math.floor(Math.random()*10)-5;
-    try{
+    try {
       await supabase.from('chalkboard_notes').insert({
         user_id: currentUser.id,
-        username: document.getElementById('profile-username').value || currentUser.email.split('@')[0],
+        username: currentUser.username,
         message,
         rotation
       });
       document.getElementById('note-input').value='';
-      loadNotes();
+      await loadNotes();
     } catch(e){ console.error('Post note error', e); }
-  }
-
-  // RESTORE SESSION IF LOGGED IN
-  const { data: { session } } = await supabase.auth.getSession();
-  if(session?.user){
-    currentUser=session.user;
-    document.getElementById('auth-buttons').style.display='none';
-    document.getElementById('main-content').style.display='block';
-    createShapes();
-    loadProfile();
-    loadNotes();
-    showGreeting();
   }
 
 });
 </script>
 </body>
 </html>
-
