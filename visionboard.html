@@ -4,85 +4,92 @@
 <meta charset="UTF-8" />
 <title>Punk Vision Board</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-<link href="https://fonts.googleapis.com/css2?family=Vast+Shadow&display=swap" rel="stylesheet" />
+<!-- Supabase UMD -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
 <style>
 body {
-  margin:0;
-  background:#000;
-  color:#fff;
-  font-family:'Press Start 2P', cursive;
+  margin: 0;
+  background: #000;
+  color: #f5f5f5;
+  font-family: 'Press Start 2P';
 }
 
-.hidden { display:none; }
+.hidden { display: none; }
 
-/* AUTH */
-#auth {
-  text-align:center;
-  padding:40px;
+#auth, #board {
+  padding: 30px;
 }
 
-.auth-box {
-  border:3px solid #ff00ff;
-  padding:30px;
-  max-width:420px;
-  margin:0 auto;
-  background:#000;
+input, textarea, button {
+  background: #111;
+  color: #0ff;
+  border: 2px solid #ff00ff;
+  padding: 10px;
+  margin: 5px 0;
+  font-family: inherit;
 }
 
-/* BOARD */
-#board {
-  padding:20px;
+button {
+  cursor: pointer;
+  background: #ff00ff;
+  color: black;
 }
 
 header {
-  display:flex;
-  align-items:center;
-  gap:15px;
-  margin-bottom:20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 2px dashed #0ff;
+  padding-bottom: 20px;
 }
 
-header img {
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  border:3px solid #ff0;
-  object-fit:cover;
+#avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid #0ff;
+  object-fit: cover;
 }
 
 #notes {
-  display:flex;
-  flex-wrap:wrap;
-  gap:15px;
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
 }
 
 .note {
-  width:140px;
-  min-height:110px;
-  padding:10px;
-  background:#ffeb3b;
-  color:#000;
-  transform: rotate(var(--r));
-  box-shadow:5px 5px 0 #000;
-  font-size:0.6em;
+  background: #0b0b0b;
+  border: 2px dashed #ff00ff;
+  padding: 15px;
+  position: relative;
+}
+
+.note button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: red;
+  color: white;
+  font-size: 10px;
 }
 </style>
 </head>
+
 <body>
 
 <!-- AUTH -->
 <div id="auth">
-  <div class="auth-box">
-    <h2 style="font-family:'Vast Shadow'">PUNK ZEN</h2>
-    <input id="username" placeholder="username (signup only)"><br><br>
-    <input id="email" placeholder="email"><br><br>
-    <input id="password" type="password" placeholder="password"><br><br>
-    <button onclick="signup()">SIGN UP</button>
-    <button onclick="login()">LOG IN</button>
-  </div>
+  <h2>ENTER THE BOARD</h2>
+  <input id="email" placeholder="email" />
+  <input id="password" type="password" placeholder="password" />
+  <input id="username" placeholder="punk alias" />
+  <br>
+  <button onclick="signup()">REGISTER</button>
+  <button onclick="login()">LOGIN</button>
 </div>
 
 <!-- BOARD -->
@@ -92,152 +99,165 @@ header img {
     <div>
       <div id="welcome"></div>
       <input type="file" onchange="uploadAvatar(event)">
+      <br>
+      <button onclick="logout()">LOG OUT</button>
     </div>
   </header>
 
-  <div id="notes"></div>
+  <h3>CHALK NOTES</h3>
+  <textarea id="noteText" placeholder="write something raw..."></textarea>
+  <br>
+  <button onclick="postNote()">POST</button>
 
-  <textarea id="noteInput" placeholder="Leave your mark..."></textarea>
-  <button onclick="postNote()">POST NOTE</button>
+  <div id="notes"></div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+const supabase = window.supabase.createClient(
+  'https://hwymepujsvfqjkbullaf.supabase.co',
+  'YOUR_PUBLIC_ANON_KEY'
+);
 
-  /* SUPABASE INIT — SAME PATTERN AS YOUR WORKING FILE */
-  const supabaseUrl = 'https://hwymepujsvfqjkbullaf.supabase.co';
-  const supabaseKey = 'YOUR_PUBLIC_ANON_KEY';
-  window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+let currentUser = null;
 
-  let currentUser = null;
+/* ---------------- AUTH ---------------- */
 
-  /* AUTH */
-  window.signup = async () => {
-    const email = emailInput().value;
-    const password = passwordInput().value;
-    const username = usernameInput().value;
+async function signup() {
+  const email = emailEl.value;
+  const password = passwordEl.value;
+  const username = usernameEl.value;
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { username } }
-    });
-
-    if (error) alert(error.message);
-    else alert('Check your email (if enabled)');
-  };
-
-  window.login = async () => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: emailInput().value,
-      password: passwordInput().value
-    });
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    initUser(data.user);
-  };
-
-  /* SESSION RESTORE */
-  supabase.auth.onAuthStateChange((_, session) => {
-    if (session?.user) initUser(session.user);
+  const { error } = await supabase.auth.signUp({
+    email, password,
+    options: { data: { username } }
   });
 
-  function initUser(user) {
-    currentUser = user;
+  if (error) alert(error.message);
+  else alert('Check email or login.');
+}
 
-    document.getElementById('auth').classList.add('hidden');
-    document.getElementById('board').classList.remove('hidden');
-
-    const name =
-      user.user_metadata.username ||
-      user.email.split('@')[0];
-
-    document.getElementById('welcome').innerText =
-      `welcome ${name}`;
-
-    loadProfile();
-    loadNotes();
-  }
-
-  /* PROFILE */
-  async function loadProfile() {
-    const { data } = await supabase
-      .from('profiles')
-      .select('avatar_url')
-      .eq('id', currentUser.id)
-      .single();
-
-    document.getElementById('avatar').src =
-      data?.avatar_url || 'https://placehold.co/100x100';
-  }
-
-  window.uploadAvatar = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const path = `${currentUser.id}.png`;
-
-    await supabase.storage
-      .from('avatars')
-      .upload(path, file, { upsert:true });
-
-    const url = supabase.storage
-      .from('avatars')
-      .getPublicUrl(path).data.publicUrl;
-
-    await supabase.from('profiles').upsert({
-      id: currentUser.id,
-      avatar_url: url
+async function login() {
+  const { data, error } =
+    await supabase.auth.signInWithPassword({
+      email: emailEl.value,
+      password: passwordEl.value
     });
 
-    loadProfile();
-  };
+  if (error) alert(error.message);
+  else initUser(data.user);
+}
 
-  /* NOTES */
-  async function loadNotes() {
-    const { data } = await supabase
-      .from('chalkboard_notes')
-      .select('*')
-      .order('created_at', { ascending:false });
+async function logout() {
+  await supabase.auth.signOut();
+  location.reload();
+}
 
-    const board = document.getElementById('notes');
-    board.innerHTML = '';
-
-    data.forEach(n => {
-      const div = document.createElement('div');
-      div.className = 'note';
-      div.style.setProperty('--r', `${n.rotation}deg`);
-      div.innerHTML =
-        `<strong>${n.username}</strong><br>${n.message}`;
-      board.appendChild(div);
-    });
-  }
-
-  window.postNote = async () => {
-    const msg = noteInput().value.trim();
-    if (!msg) return;
-
-    await supabase.from('chalkboard_notes').insert({
-      user_id: currentUser.id,
-      username: currentUser.user_metadata.username,
-      message: msg,
-      rotation: Math.random()*10 - 5
-    });
-
-    noteInput().value='';
-    loadNotes();
-  };
-
-  /* HELPERS */
-  const emailInput = () => document.getElementById('email');
-  const passwordInput = () => document.getElementById('password');
-  const usernameInput = () => document.getElementById('username');
-  const noteInput = () => document.getElementById('noteInput');
+supabase.auth.onAuthStateChange((_, session) => {
+  if (session?.user) initUser(session.user);
 });
+
+/* ---------------- USER INIT ---------------- */
+
+function initUser(user) {
+  currentUser = user;
+
+  auth.classList.add('hidden');
+  board.classList.remove('hidden');
+
+  welcome.textContent = `HELLO ${user.user_metadata.username || 'PUNK'}`;
+
+  loadAvatar();
+  loadNotes();
+  subscribeNotes();
+}
+
+/* ---------------- AVATAR ---------------- */
+
+async function uploadAvatar(e) {
+  const file = e.target.files[0];
+  const path = `${currentUser.id}/avatar.png`;
+
+  await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+
+  loadAvatar();
+}
+
+async function loadAvatar() {
+  const { data } =
+    supabase.storage.from('avatars')
+      .getPublicUrl(`${currentUser.id}/avatar.png`);
+
+  avatar.src = data.publicUrl || '';
+}
+
+/* ---------------- NOTES ---------------- */
+
+async function postNote() {
+  const text = noteText.value.trim();
+  if (!text) return;
+
+  await supabase.from('notes').insert({
+    content: text,
+    user_id: currentUser.id,
+    username: currentUser.user_metadata.username
+  });
+
+  noteText.value = '';
+}
+
+async function loadNotes() {
+  const { data } =
+    await supabase.from('notes')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+  renderNotes(data);
+}
+
+function renderNotes(notes) {
+  notesEl.innerHTML = '';
+  notes.forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'note';
+    div.innerHTML = `
+      <strong>${n.username || 'anon'}</strong>
+      <p>${n.content}</p>
+      ${n.user_id === currentUser.id
+        ? `<button onclick="deleteNote('${n.id}')">X</button>`
+        : ''}
+    `;
+    notesEl.appendChild(div);
+  });
+}
+
+async function deleteNote(id) {
+  await supabase.from('notes').delete().eq('id', id);
+}
+
+/* ---------------- REALTIME ---------------- */
+
+function subscribeNotes() {
+  supabase
+    .channel('notes')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'notes' },
+      loadNotes
+    )
+    .subscribe();
+}
+
+/* ---------------- ELEMENTS ---------------- */
+
+const emailEl = document.getElementById('email');
+const passwordEl = document.getElementById('password');
+const usernameEl = document.getElementById('username');
+const auth = document.getElementById('auth');
+const board = document.getElementById('board');
+const welcome = document.getElementById('welcome');
+const avatar = document.getElementById('avatar');
+const noteText = document.getElementById('noteText');
+const notesEl = document.getElementById('notes');
 </script>
+
 </body>
 </html>
