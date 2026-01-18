@@ -272,6 +272,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 });
+  async function loadNotes() {
+  const { data, error } = await supabase
+    .from('chalkboard_notes')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) return;
+
+  const board = document.getElementById('notes-board');
+  board.innerHTML = '';
+
+  data.forEach(note => {
+    const div = document.createElement('div');
+    div.className = 'note';
+    div.style.setProperty('--rot', `${note.rotation}deg`);
+    div.innerHTML = `<strong>${note.username}</strong><br>${note.message}`;
+    board.appendChild(div);
+  });
+}
+
+async function postNote() {
+  const message = document.getElementById('note-input').value;
+  if (!message) return;
+
+  const rotation = Math.floor(Math.random() * 10) - 5;
+
+  const { error } = await supabase
+    .from('chalkboard_notes')
+    .insert({
+      user_id: currentUser.id,
+      username: currentUser.email.split('@')[0],
+      message,
+      rotation
+    });
+
+  if (!error) {
+    document.getElementById('note-input').value = '';
+    loadNotes();
+  }
+}
+
 </script>
 
 </body>
