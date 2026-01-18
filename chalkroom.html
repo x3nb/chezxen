@@ -152,7 +152,16 @@ body {
   </div>
 
 </div>
+<div class="paper" id="chalkboard">
+  <h2 style="font-family:'Vast Shadow',cursive;">Chalkboard</h2>
 
+  <div id="notes-board"></div>
+
+  <textarea id="note-input" placeholder="I was here..."
+    style="width:100%; padding:10px; font-family:'Press Start 2P';"></textarea>
+
+  <button onclick="postNote()">Post It</button>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
