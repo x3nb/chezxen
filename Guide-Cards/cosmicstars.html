@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xen’s Place</title>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Neuton&display=swap" rel="stylesheet">
+  
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Neuton', serif;
+      background: radial-gradient(circle at top, #1b0033, #0d0d1a);
+      color: #e0d8ff;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* Fade-In Animations */
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    /* Header Title */
+    header {
+      text-align: center;
+      padding: 2rem 1rem;
+      opacity: 0;
+      animation: fadeIn 2s ease forwards;
+    }
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 3rem;
+      background: linear-gradient(90deg, #6a5acd, #7b68ee, #9370db);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 10px rgba(147, 112, 219, 0.7);
+    }
+
+    /* Ticker Tape */
+    .ticker-container {
+      position: relative;
+      overflow: hidden;
+      height: 2.2rem;
+      margin: 1rem auto 2rem auto;
+      border: 1px solid rgba(138, 43, 226, 0.5);
+      border-radius: 8px;
+      max-width: 600px;
+      background: rgba(25, 25, 112, 0.3);
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
+      opacity: 0;
+      animation: fadeIn 2s ease forwards;
+      animation-delay: 1.5s;
+    }
+    .ticker-text {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      font-family: 'Neuton', serif;
+      font-size: 1.1rem;
+      color: #dcd0ff;
+      animation: ticker 15s linear infinite;
+    }
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* Realm Portrait Cards */
+    .realms {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      padding: 2rem;
+    }
+    .realm-card {
+      position: relative;
+      width: 220px;
+      height: 300px;
+      perspective: 1000px;
+      cursor: pointer;
+      text-decoration: none;
+      opacity: 0;
+      animation: fadeInUp 1.5s ease forwards;
+    }
+    .realm-card:nth-child(1) { animation-delay: 2.5s; }
+    .realm-card:nth-child(2) { animation-delay: 3s; }
+    .realm-card:nth-child(3) { animation-delay: 3.5s; }
+
+    .realm-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(160deg, #483d8b, #6a5acd);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(106, 90, 205, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+    }
+    .realm-card:hover .realm-content {
+      transform: translateY(-8px);
+      box-shadow: 0 0 30px rgba(147, 112, 219, 0.8);
+    }
+    .realm-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+    }
+    .realm-content h2 {
+      margin-top: 0.8rem;
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      color: #f0eaff;
+      text-shadow: 0 0 8px rgba(138, 43, 226, 0.6);
+    }
+
+    /* Reflection */
+    .realm-card::after {
+      content: "";
+      position: absolute;
+      bottom: -40%;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: linear-gradient(to top, rgba(147,112,219,0.3), transparent);
+      transform: scaleY(-1);
+      border-radius: 12px;
+      background-clip: padding-box;
+      pointer-events: none;
+    }
+
+    /* Tiny Sparkles */
+    .sparkle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.8;
+      animation: twinkle 3s infinite ease-in-out;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Chez Xen</h1>
+  </header>
+
+  <!-- Ticker -->
+  <div class="ticker-container">
+    <div class="ticker-text">Welcome, traveler. Choose your realm and meet the guides of the elements...</div>
+  </div>
+
+  <!-- Realms -->
+  <section class="realms">
+    <a href="chatbot-fire.html" class="realm-card">
+      <div class="realm-content">
+        <img src="fire-character.png" alt="Fire Guide">
+        <h2>Realm of Fire</h2>
+      </div>
+    </a>
+
+    <a href="chatbot-water.html" class="realm-card">
+      <div class="realm-content">
+        <img src="water-character.png" alt="Water Guide">
+        <h2>Realm of Water</h2>
+      </div>
+    </a>
+
+    <a href="chatbot-air.html" class="realm-card">
+      <div class="realm-content">
+        <img src="air-character.png" alt="Air Guide">
+        <h2>Realm of Air</h2>
+      </div>
+    </a>
+  </section>
+
+  <script>
+    // Generate background sparkles
+    for (let i = 0; i < 50; i++) {
+      const sparkle = document.createElement('div');
+      sparkle.className = 'sparkle';
+      sparkle.style.top = Math.random() * 100 + '%';
+      sparkle.style.left = Math.random() * 100 + '%';
+      sparkle.style.animationDelay = Math.random() * 3 + 's';
+      sparkle.style.animationDuration = 2 + Math.random() * 3 + 's';
+      document.body.appendChild(sparkle);
+    }
+  </script>
+</body>
+</html>
